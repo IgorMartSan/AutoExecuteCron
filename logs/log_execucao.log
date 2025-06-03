@@ -1,0 +1,17 @@
+📅 Data: 2025-06-03 14:30:26
+📁 Projeto: /home/igor/Documents/auto_execute_python_projects
+============================================================
+
+🚀 Executando: /home/igor/Documents/auto_execute_python_projects/auto_execute/main_auto_update.py
+📤 STDOUT:
+📅 Coletando de 06/01/2025 até 06/03/2025...
+📎 Link do CSV encontrado: blob:https://tempo.inmet.gov.br/745b2620-4f97-4272-9e5a-ac997c546cd9
+⚠️ Este link é um BLOB URL, que só pode ser acessado dentro do navegador.
+   Use a abordagem de download com Selenium para capturar esse arquivo.
+📎 blob URL: blob:https://tempo.inmet.gov.br/95042c1f-bfdf-4eae-90d7-dc71e99a2ef5
+✅ Coletado: 66 linhas.
+
+⚠️ STDERR:
+
+============================================================
+✅ Execução finalizada.

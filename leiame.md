@@ -26,3 +26,7 @@ chmod +x iniciar_ou_atualizar.sh
 
 chmod +x parar_execucao.sh
 ./parar_execucao.sh
+
+# Verificar o conteúdo atual do crontab
+
+crontab -l
