@@ -9,10 +9,15 @@ import requests
 import time
 import schedule
 import time
+import tempfile
+
 
 def coletar_dados_inmet(estacao_id="A511", data_inicio="01/01/2025", data_fim="01/05/2025"):
+
+    temp_dir = tempfile.mkdtemp()
     # Configurar o navegador (sem diretório de download porque não vamos baixar nada)
     options = Options()
+    options.add_argument(f"--user-data-dir={temp_dir}")
     # options.add_argument("--start-maximized")
     # options.add_argument("--headless=new")  # evita que o Chrome mande cabeçalho "webdriver"
     # options.add_argument("--headless")  # não abre janela
