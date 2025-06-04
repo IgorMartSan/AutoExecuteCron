@@ -5,7 +5,7 @@ NOME_PROJETO="executar_todos.py"
 DIRETORIO_SCRIPT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # Caminho absoluto
 SCRIPT_PATH="$DIRETORIO_SCRIPT/$NOME_PROJETO"
 DELAY_BOOT=200                 # segundos de delay após reboot
-HORAS_INTERVALO=0.01             # intervalo entre execuções regulares
+HORAS_INTERVALO=8             # intervalo entre execuções regulares
 # ===============================================
 
 PYTHON_PATH=$(which python3)
