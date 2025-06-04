@@ -7,15 +7,14 @@ import pandas as pd
 from io import StringIO
 import requests
 import time
-import schedule
-import time
+
 
 def coletar_dados_inmet(estacao_id="A511", data_inicio="01/01/2025", data_fim="01/05/2025"):
     # Configurar o navegador (sem diretório de download porque não vamos baixar nada)
     options = Options()
-    # options.add_argument("--start-maximized")
+    #options.add_argument("--start-maximized")
     # options.add_argument("--headless=new")  # evita que o Chrome mande cabeçalho "webdriver"
-    # options.add_argument("--headless")  # não abre janela
+    #options.add_argument("--headless")  # não abre janela
     # options.add_argument("--disable-gpu")
     # options.add_argument("--no-sandbox")
     # options.add_argument("--window-size=1920,1080")  # simula tela "grande" invisível
@@ -174,93 +173,86 @@ def send_recorded_values(base_url: str, webid: str, values: list) -> bool:
         print(response.text if response else "sem resposta")
         return False
 
+
 # ------------------ Coleta de dados mês a mês ------------------
 def main():
-    from datetime import datetime
+    from datetime import datetime, timedelta
     from calendar import monthrange
 
     dados = []
 
-    # Data atual
+    ano_inicio = 2025
     hoje = datetime.utcnow().date()
     ano_atual = hoje.year
     mes_atual = hoje.month
-    dia_hoje = hoje.day
+    dia_atual = hoje.day
 
-    # Define data de início (primeiro dia do mês atual)
-    data_inicio = f"{mes_atual:02d}/01/{ano_atual}"
+    for ano in range(ano_inicio, ano_atual + 1):
+        mes_final = 12
+        if ano == ano_atual:
+            mes_final = mes_atual
 
-    # Define data de fim (hoje)
-    data_fim = f"{mes_atual:02d}/{dia_hoje:02d}/{ano_atual}"
+        for mes in range(1, mes_final + 1):
+            data_inicio = f"{mes:02d}/01/{ano}"
 
-    print(f"📅 Coletando de {data_inicio} até {data_fim}...")
+            # Caso seja o mês atual e o ano atual, vai até ontem
+            if ano == ano_atual and mes == mes_atual:
+                dia_fim = (hoje - timedelta(days=1)).day
+            else:
+                dia_fim = monthrange(ano, mes)[1]
 
-    try:
-        df_mensal = coletar_dados_inmet(estacao_id="A511", data_inicio=data_inicio, data_fim=data_fim)
-        df_mensal = df_mensal.dropna()
-        if not df_mensal.empty:
-            dados.append(df_mensal)
-            print(f"✅ Coletado: {len(df_mensal)} linhas.")
-        else:
-            print("⚠️ Nenhum dado encontrado.")
-    except Exception as e:
-        print(f"❌ Falha ao coletar {mes_atual:02d}/{ano_atual}: {e}")
+            data_fim = f"{mes:02d}/{dia_fim:02d}/{ano}"
 
-    df = df_mensal.dropna()
+            print(f"📅 Coletando de {data_inicio} até {data_fim}...")
 
-    # Substitui vírgula por ponto e converte para float
-    for col in ["SYS_TEMPERATURA_MAX", "SYS_TEMPERATURA_MIN", "SYS_PONTO_ORVALHO_MAX", "SYS_PONTO_ORVALHO_MIN"]:
-        df[col] = df[col].str.replace(",", ".").astype(float)
+            try:
+                df_mensal = coletar_dados_inmet(estacao_id="A511", data_inicio=data_inicio, data_fim=data_fim)
+                df_mensal = df_mensal.dropna()
+                if not df_mensal.empty:
+                    dados.append(df_mensal)
+                    print(f"✅ Coletado: {len(df_mensal)} linhas.")
+                else:
+                    print("⚠️ Nenhum dado encontrado.")
+            except Exception as e:
+                print(f"❌ Falha ao coletar {mes:02d}/{ano}: {e}")
 
-    # ----------- Configurações -----------
-    base_url = "http://10.247.224.39/piwebapi"
-    pims_prefix = "\\\\pims\\"
+        df = df_mensal.dropna()
 
-    # ----------- Obter WebIds -----------
-    webid_map = {
-        "SYS_TEMPERATURA_MAX": get_webid_by_path(base_url, f"{pims_prefix}SYS_TEMPERATURA_MAX"),
-        "SYS_TEMPERATURA_MIN": get_webid_by_path(base_url, f"{pims_prefix}SYS_TEMPERATURA_MIN"),
-        "SYS_PONTO_ORVALHO_MAX": get_webid_by_path(base_url, f"{pims_prefix}SYS_PONTO_ORVALHO_MAX"),
-        "SYS_PONTO_ORVALHO_MIN": get_webid_by_path(base_url, f"{pims_prefix}SYS_PONTO_ORVALHO_MIN"),
-    }
+        # Substitui vírgula por ponto e converte para float
+        for col in ["SYS_TEMPERATURA_MAX", "SYS_TEMPERATURA_MIN", "SYS_PONTO_ORVALHO_MAX", "SYS_PONTO_ORVALHO_MIN"]:
+            df[col] = df[col].str.replace(",", ".").astype(float)
 
-    print("igor123")
+        # ----------- Configurações -----------
+        base_url = "http://10.247.224.39/piwebapi"
+        pims_prefix = "\\\\pims\\"
 
-
-    # ----------- Enviar dados para cada tag -----------
-    for tag, webid in webid_map.items():
-        if not webid:
-            continue  # pula se o WebId falhar
-
-        valores_para_enviar = [
-            {"Timestamp": row["Timestamp"], "Value": row[tag]}
-            for _, row in df.iterrows()
-            if pd.notnull(row[tag])
-        ]
-
-        send_recorded_values(base_url, webid, valores_para_enviar)
-
-# import schedule
-# import time
+        # ----------- Obter WebIds -----------
+        webid_map = {
+            "SYS_TEMPERATURA_MAX": get_webid_by_path(base_url, f"{pims_prefix}SYS_TEMPERATURA_MAX"),
+            "SYS_TEMPERATURA_MIN": get_webid_by_path(base_url, f"{pims_prefix}SYS_TEMPERATURA_MIN"),
+            "SYS_PONTO_ORVALHO_MAX": get_webid_by_path(base_url, f"{pims_prefix}SYS_PONTO_ORVALHO_MAX"),
+            "SYS_PONTO_ORVALHO_MIN": get_webid_by_path(base_url, f"{pims_prefix}SYS_PONTO_ORVALHO_MIN"),
+        }
 
 
-if __name__ == "__main__":
-    # while True:
-    #     print("🚀 Executando coleta...")
-    #     try:
-            main()
-        #     print("✅ Coleta finalizada!")
-        # except Exception as e:
-        #     print(f"❌ Erro na execução: {e}")
+        # ----------- Enviar dados para cada tag -----------
+        for tag, webid in webid_map.items():
+            if not webid:
+                continue  # pula se o WebId falhar
 
-        # timer = 3600*8
-        
-        # print(f"⏳ Aguardando {timer/3600} hora(s) para próxima execução...")
-        # time.sleep(timer)  # 3600 segundos = 1 hora
+            valores_para_enviar = [
+                {"Timestamp": row["Timestamp"], "Value": row[tag]}
+                for _, row in df.iterrows()
+                if pd.notnull(row[tag])
+            ]
+
+            send_recorded_values(base_url, webid, valores_para_enviar)
 
 
 
 
+
+main()
 
 
 
