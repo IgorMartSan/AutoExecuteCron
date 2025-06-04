@@ -13,146 +13,145 @@ import tempfile
 
 
 def coletar_dados_inmet(estacao_id="A511", data_inicio="01/01/2025", data_fim="01/05/2025"):
-
-    temp_dir = tempfile.mkdtemp()
-    # Configurar o navegador (sem diretório de download porque não vamos baixar nada)
-    options = Options()
-    options.add_argument(f"--user-data-dir={temp_dir}")
-    # options.add_argument("--start-maximized")
-    # options.add_argument("--headless=new")  # evita que o Chrome mande cabeçalho "webdriver"
-    # options.add_argument("--headless")  # não abre janela
-    # options.add_argument("--disable-gpu")
-    # options.add_argument("--no-sandbox")
-    # options.add_argument("--window-size=1920,1080")  # simula tela "grande" invisível
-    
-    driver = webdriver.Chrome(options=options)
-    
-
-    try:
-        # Acesse a página do INMET para dados da estação
-        driver.get(f"https://tempo.inmet.gov.br/tabela/mapa/{estacao_id}/2025-05-20")
-        time.sleep(3)
-
-        # Preenche as datas nos inputs
-        inputs = driver.find_elements(By.TAG_NAME, "input")
-        if len(inputs) >= 2:
-            inputs[0].clear()
-            inputs[0].send_keys(data_inicio)
-            inputs[1].clear()
-            inputs[1].send_keys(data_fim)
-
-
-        time.sleep(5)
-
-        # Clica no botão "Gerar Tabela"
-        buttons = driver.find_elements(By.TAG_NAME, "button")
-
-        # for btn in buttons:
-        #     if "Gerar Tabela" in btn.text:
-        #         btn.click()
-        #         break
-
-        # time.sleep(5)
-
-        # Procura o link "Baixar CSV"
-        links = driver.find_elements(By.TAG_NAME, "a")
-        for link in links:
-            if "Baixar CSV" in link.text:
-                csv_url = link.get_attribute("href")
-                print("📎 Link do CSV encontrado:", csv_url)
-
-                if csv_url.startswith("blob:"):
-                    print("⚠️ Este link é um BLOB URL, que só pode ser acessado dentro do navegador.")
-                    print("   Use a abordagem de download com Selenium para capturar esse arquivo.")
-                else:
-                    print("✅ URL direta para CSV. Você pode usar requests ou pandas.read_csv com isso.")
-                break
-
-
-
-        # 3. Clica em "Gerar Tabela"
-        for btn in driver.find_elements(By.TAG_NAME, "button"):
-            if "Gerar Tabela" in btn.text:
-                btn.click()
-                break
-
-
-
-        # 4. Aguarda aparecer o botão "Baixar CSV"
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, "//a[contains(text(), 'Baixar CSV')]"))
-        )
-
-        # 5. Captura o link do blob
-        blob_link = driver.find_element(By.XPATH, "//a[contains(text(), 'Baixar CSV')]")
-        blob_url = blob_link.get_attribute("href")
-        print("📎 blob URL:", blob_url)
-
-        # 6. Executa um script assíncrono para ler o conteúdo do blob
-        script = """
-            const url = arguments[0];
-            const callback = arguments[1];
-            fetch(url)
-                .then(res => res.text())
-                .then(data => callback(data))
-                .catch(err => callback("ERRO: " + err));
-        """
-        csv_content = driver.execute_async_script(script, blob_url)
-
-        if csv_content.startswith("ERRO:"):
-            raise Exception(csv_content)
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Configurar o navegador (sem diretório de download porque não vamos baixar nada)
+        options = Options()
+        options.add_argument(f"--user-data-dir={temp_dir}")
+        # options.add_argument("--start-maximized")
+        # options.add_argument("--headless=new")  # evita que o Chrome mande cabeçalho "webdriver"
+        # options.add_argument("--headless")  # não abre janela
+        # options.add_argument("--disable-gpu")
+        # options.add_argument("--no-sandbox")
+        # options.add_argument("--window-size=1920,1080")  # simula tela "grande" invisível
         
-        time.sleep(5)
+        driver = webdriver.Chrome(options=options)
+        
 
-        # 7. Converte para DataFrame e tratar os dados
-        df = pd.read_csv(StringIO(csv_content), sep=";")
+        try:
+            # Acesse a página do INMET para dados da estação
+            driver.get(f"https://tempo.inmet.gov.br/tabela/mapa/{estacao_id}/2025-05-20")
+            time.sleep(3)
 
-        colunas_desejadas = [
-            'Data',
-            'Hora (UTC)',
-            'Temp. Max. (C)',
-            'Temp. Min. (C)',
-            'Pto Orvalho Max. (C)',
-            'Pto Orvalho Min. (C)'
-        ]
-
-        df = df[colunas_desejadas]
-
-       
-
-        # ✅ Renomear colunas para formato SYS_
-        renomear = {
-            'Temp. Max. (C)': 'SYS_TEMPERATURA_MAX',
-            'Temp. Min. (C)': 'SYS_TEMPERATURA_MIN',
-            'Pto Orvalho Max. (C)': 'SYS_PONTO_ORVALHO_MAX',
-            'Pto Orvalho Min. (C)': 'SYS_PONTO_ORVALHO_MIN',
-            'Data': 'Data',
-            'Hora (UTC)': 'Hora (UTC)'
-        }
-
-        df = df.rename(columns=renomear)  
-
-        df = df[list(renomear.values())]
-        # Renomear colunas
+            # Preenche as datas nos inputs
+            inputs = driver.find_elements(By.TAG_NAME, "input")
+            if len(inputs) >= 2:
+                inputs[0].clear()
+                inputs[0].send_keys(data_inicio)
+                inputs[1].clear()
+                inputs[1].send_keys(data_fim)
 
 
+            time.sleep(5)
 
-        def converter_para_hora_utc(hora_str):
-            hora_str = str(hora_str).zfill(4)  # Garante 4 dígitos: ex: 0 -> 0000, 100 -> 0100
-            return f"{hora_str[:2]}:{hora_str[2:]}:00"
+            # Clica no botão "Gerar Tabela"
+            buttons = driver.find_elements(By.TAG_NAME, "button")
 
-        # Cria a coluna de datetime combinada
-        df["Timestamp"] = pd.to_datetime(
-            df["Data"] + " " + df["Hora (UTC)"].apply(converter_para_hora_utc),
-            format="%d/%m/%Y %H:%M:%S"
-        )
+            # for btn in buttons:
+            #     if "Gerar Tabela" in btn.text:
+            #         btn.click()
+            #         break
 
-        # Converte para formato ISO 8601 com Z (UTC)
-        df["Timestamp"] = df["Timestamp"].dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+            # time.sleep(5)
 
-        return df
-    finally:
-        driver.quit()
+            # Procura o link "Baixar CSV"
+            links = driver.find_elements(By.TAG_NAME, "a")
+            for link in links:
+                if "Baixar CSV" in link.text:
+                    csv_url = link.get_attribute("href")
+                    print("📎 Link do CSV encontrado:", csv_url)
+
+                    if csv_url.startswith("blob:"):
+                        print("⚠️ Este link é um BLOB URL, que só pode ser acessado dentro do navegador.")
+                        print("   Use a abordagem de download com Selenium para capturar esse arquivo.")
+                    else:
+                        print("✅ URL direta para CSV. Você pode usar requests ou pandas.read_csv com isso.")
+                    break
+
+
+
+            # 3. Clica em "Gerar Tabela"
+            for btn in driver.find_elements(By.TAG_NAME, "button"):
+                if "Gerar Tabela" in btn.text:
+                    btn.click()
+                    break
+
+
+
+            # 4. Aguarda aparecer o botão "Baixar CSV"
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, "//a[contains(text(), 'Baixar CSV')]"))
+            )
+
+            # 5. Captura o link do blob
+            blob_link = driver.find_element(By.XPATH, "//a[contains(text(), 'Baixar CSV')]")
+            blob_url = blob_link.get_attribute("href")
+            print("📎 blob URL:", blob_url)
+
+            # 6. Executa um script assíncrono para ler o conteúdo do blob
+            script = """
+                const url = arguments[0];
+                const callback = arguments[1];
+                fetch(url)
+                    .then(res => res.text())
+                    .then(data => callback(data))
+                    .catch(err => callback("ERRO: " + err));
+            """
+            csv_content = driver.execute_async_script(script, blob_url)
+
+            if csv_content.startswith("ERRO:"):
+                raise Exception(csv_content)
+            
+            time.sleep(5)
+
+            # 7. Converte para DataFrame e tratar os dados
+            df = pd.read_csv(StringIO(csv_content), sep=";")
+
+            colunas_desejadas = [
+                'Data',
+                'Hora (UTC)',
+                'Temp. Max. (C)',
+                'Temp. Min. (C)',
+                'Pto Orvalho Max. (C)',
+                'Pto Orvalho Min. (C)'
+            ]
+
+            df = df[colunas_desejadas]
+
+        
+
+            # ✅ Renomear colunas para formato SYS_
+            renomear = {
+                'Temp. Max. (C)': 'SYS_TEMPERATURA_MAX',
+                'Temp. Min. (C)': 'SYS_TEMPERATURA_MIN',
+                'Pto Orvalho Max. (C)': 'SYS_PONTO_ORVALHO_MAX',
+                'Pto Orvalho Min. (C)': 'SYS_PONTO_ORVALHO_MIN',
+                'Data': 'Data',
+                'Hora (UTC)': 'Hora (UTC)'
+            }
+
+            df = df.rename(columns=renomear)  
+
+            df = df[list(renomear.values())]
+            # Renomear colunas
+
+
+
+            def converter_para_hora_utc(hora_str):
+                hora_str = str(hora_str).zfill(4)  # Garante 4 dígitos: ex: 0 -> 0000, 100 -> 0100
+                return f"{hora_str[:2]}:{hora_str[2:]}:00"
+
+            # Cria a coluna de datetime combinada
+            df["Timestamp"] = pd.to_datetime(
+                df["Data"] + " " + df["Hora (UTC)"].apply(converter_para_hora_utc),
+                format="%d/%m/%Y %H:%M:%S"
+            )
+
+            # Converte para formato ISO 8601 com Z (UTC)
+            df["Timestamp"] = df["Timestamp"].dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+            return df
+        finally:
+            driver.quit()
 
 # ----------- Função para obter WebId -----------
 def get_webid_by_path(base_url: str, path: str) -> str:
