@@ -11,17 +11,70 @@ import schedule
 import time
 import tempfile
 
+from playwright.sync_api import sync_playwright
+import pandas as pd
+from io import StringIO
+import time
+from selenium import webdriver
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import tempfile
+import time
+import pandas as pd
+from io import StringIO
+
+import os
+
+import logging
+from logging.handlers import RotatingFileHandler
+from datetime import datetime
+import os
+
+# Criar diretório de logs se não existir
+log_dir = "./"
+os.makedirs(log_dir, exist_ok=True)
+
+# Caminho do log
+log_path = os.path.join(log_dir, "coletor_inmet.log")
+
+# Criar handler com rotação: 5 MB e 3 backups
+log_handler = RotatingFileHandler(
+    log_path, maxBytes=5 * 1024 * 1024, backupCount=1
+)
+
+# Configurar formato
+log_formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
+log_handler.setFormatter(log_formatter)
+
+# Configurar logger
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+logger.addHandler(log_handler)
+
+# Redirecionar print para logging
+def print(*args, **kwargs):
+    logger.info(" ".join(str(arg) for arg in args))
+
+
+
 
 def coletar_dados_inmet(estacao_id="A511", data_inicio="01/01/2025", data_fim="01/05/2025"):
-    with tempfile.TemporaryDirectory() as temp_dir:
-        # Configurar o navegador (sem diretório de download porque não vamos baixar nada)
+   
+        novo_perfil = os.path.join(tempfile.gettempdir(), "chrome_novo_usuario")
+
         options = Options()
-        options.add_argument(f"--user-data-dir={temp_dir}")
+        options.add_argument(f"--user-data-dir={novo_perfil}")  # Diretório para o novo perfil
+        options.add_argument("--no-first-run")  # Evita o pop-up inicial
+        options.add_argument("--no-default-browser-check")  # Evita o aviso de navegador padrão
+        # options = Options()
+        # options.add_argument(f"--user-data-dir={temp_dir}")
         # options.add_argument("--start-maximized")
         # options.add_argument("--headless=new")  # evita que o Chrome mande cabeçalho "webdriver"
-        # options.add_argument("--headless")  # não abre janela
-        # options.add_argument("--disable-gpu")
-        # options.add_argument("--no-sandbox")
+        #options.add_argument("--headless")  # não abre janela
+        options.add_argument("--disable-gpu")
+        options.add_argument("--no-sandbox")
         # options.add_argument("--window-size=1920,1080")  # simula tela "grande" invisível
         
         driver = webdriver.Chrome(options=options)
@@ -200,7 +253,9 @@ def main():
     print(f"📅 Coletando de {data_inicio} até {data_fim}...")
 
     try:
+
         df_mensal = coletar_dados_inmet(estacao_id="A511", data_inicio=data_inicio, data_fim=data_fim)
+        #df_mensal = coletar_dados_inmet(estacao_id="A511", data_inicio=data_inicio, data_fim=data_fim)
         df_mensal = df_mensal.dropna()
         if not df_mensal.empty:
             dados.append(df_mensal)
@@ -249,18 +304,18 @@ def main():
 
 
 if __name__ == "__main__":
-    # while True:
-    #     print("🚀 Executando coleta...")
-    #     try:
+    while True:
+        print("🚀 Executando coleta...")
+        try:
             main()
-        #     print("✅ Coleta finalizada!")
-        # except Exception as e:
-        #     print(f"❌ Erro na execução: {e}")
+            print("✅ Coleta finalizada!")
+        except Exception as e:
+            print(f"❌ Erro na execução: {e}")
 
-        # timer = 3600*8
+        timer = 3600*8
         
-        # print(f"⏳ Aguardando {timer/3600} hora(s) para próxima execução...")
-        # time.sleep(timer)  # 3600 segundos = 1 hora
+        print(f"⏳ Aguardando {timer/3600} hora(s) para próxima execução...")
+        time.sleep(timer)  # 3600 segundos = 1 hora
 
 
 

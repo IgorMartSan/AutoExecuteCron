@@ -19,7 +19,7 @@ Este comando agenda o script `executar_todos.py` para:
 
 # Iniciar a Execução Automática (bash)
 
-chmod +x iniciar_ou_atualizar.sh
+sudo chmod +x iniciar_ou_atualizar.sh
 ./iniciar_ou_atualizar.sh
 
 # Parar a Execução Automática (bash)
