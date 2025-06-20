@@ -1,22 +1,15 @@
-📅 Data: 2025-06-04 16:47:32
+📅 Data: 2025-06-20 10:00:01
 📁 Projeto: /home/igor/Documents/auto_execute_python_projects
 ============================================================
 
 🚀 Executando: /home/igor/Documents/auto_execute_python_projects/auto_execute/main_auto_update.py
 📤 STDOUT:
-📅 Coletando de 06/01/2025 até 06/04/2025...
-📎 Link do CSV encontrado: blob:https://tempo.inmet.gov.br/3e35efbe-5005-4e97-b652-7d692dcbe9a7
-⚠️ Este link é um BLOB URL, que só pode ser acessado dentro do navegador.
-   Use a abordagem de download com Selenium para capturar esse arquivo.
-📎 blob URL: blob:https://tempo.inmet.gov.br/81274ec0-90e5-41fd-8562-07bbb64009c0
-✅ Coletado: 92 linhas.
-igor123
-Enviado com sucesso para WebId: F1DPxhF1MCtATE6DjgaMSVY2gga34CAAUElNU1xTWVNfVEVNUEVSQVRVUkFfTUFY
-Enviado com sucesso para WebId: F1DPxhF1MCtATE6DjgaMSVY2ggbH4CAAUElNU1xTWVNfVEVNUEVSQVRVUkFfTUlO
-Enviado com sucesso para WebId: F1DPxhF1MCtATE6DjgaMSVY2ggbX4CAAUElNU1xTWVNfUE9OVE9fT1JWQUxIT19NQVg
-Enviado com sucesso para WebId: F1DPxhF1MCtATE6DjgaMSVY2ggbn4CAAUElNU1xTWVNfUE9OVE9fT1JWQUxIT19NSU4
 
 ⚠️ STDERR:
+Traceback (most recent call last):
+  File "/home/igor/Documents/auto_execute_python_projects/auto_execute/main_auto_update.py", line 1, in <module>
+    from selenium import webdriver
+ModuleNotFoundError: No module named 'selenium'
 
 ============================================================
 ✅ Execução finalizada.
